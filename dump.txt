@@ -1,0 +1,332 @@
+# src/__init__.py
+```
+
+```
+# src/xoadmin/api.py
+```
+import httpx
+from typing import Any, Dict, Optional
+
+# Assuming you've set up get_logger in .utils
+from .utils import get_logger
+
+logger = get_logger(__name__)
+
+class AuthenticationError(Exception):
+    """Custom exception for authentication errors."""
+    
+class XOApi:
+    """An asynchronous client for interacting with Xen Orchestra's REST API."""
+
+    def __init__(self, base_url: str, verify_ssl: bool = True) -> None:
+        self.base_url = base_url
+        self.session = httpx.AsyncClient(verify=verify_ssl,follow_redirects=True)
+        self.auth_token = None
+        
+    def verify_ssl(self,verify_ssl:bool) -> None:
+        self.session = httpx.AsyncClient(verify=verify_ssl,follow_redirects=True)
+
+    async def authenticate_with_credentials(self, username: str, password: str) -> None:
+        """
+        Authenticate using username and password to obtain authentication tokens.
+        """
+        auth_url = f"{self.base_url}/api/v1/session"
+        response = await self.session.post(auth_url, json={'email': username, 'password': password})
+
+        logger.info(f"Response status code: {response.status_code}")
+        logger.info(response.text)
+
+        if response.status_code == 200:
+            # Assuming successful authentication
+            # Extract session and CSRF tokens from response headers
+            session_token = response.cookies.get('XO_SESSION')
+            csrf_token = response.cookies.get('XO_CSRF')
+
+            if session_token and csrf_token:
+                # Update session headers with tokens
+                self.session.headers.update({
+                    "X-XSRF-TOKEN": csrf_token,
+                    "Cookie": f"XO_SESSION={session_token}; XSRF-TOKEN={csrf_token}"
+                })
+
+                # Log successful authentication
+                logger.info("Successfully authenticated.")
+            else:
+                raise AuthenticationError("Failed to extract session and CSRF tokens from response.")
+        else:
+            raise AuthenticationError(f"Failed to authenticate: {response.text}")
+
+    async def close(self) -> None:
+        """Close the session."""
+        await self.session.aclose()
+        
+    async def _refresh_token(self) -> None:
+        """Refresh the authentication token. Placeholder for actual implementation."""
+        logger.info("Refreshing authentication token...")
+        # Placeholder: Implement your logic for obtaining a new token
+        # For example, re-authenticate using stored credentials
+        self.auth_token = "newly_refreshed_token"
+        logger.info("Token refreshed.")
+
+    async def _request(self, method: str, endpoint: str, **kwargs: Any) -> Any:
+        """A wrapper for making authenticated requests with token refresh logic."""
+        url = f"{self.base_url}/{endpoint}"
+        headers = {"Cookie": f"authenticationToken={self.auth_token}"}
+        async with self.session.request(method, url, headers=headers, **kwargs) as response:
+            if response.status_code == 401:
+                await self._refresh_token()  # Refresh token and retry once
+                headers["Cookie"] = f"authenticationToken={self.auth_token}"
+                async with self.session.request(method, url, headers=headers, **kwargs) as retry_response:
+                    retry_response.raise_for_status()
+                    return retry_response.json()
+            response.raise_for_status()
+            return response.json()
+
+    async def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
+        return await self._request("GET", endpoint, params=params)
+
+    async def post(self, endpoint: str, json_data: Dict[str, Any], **kwargs: Any) -> Any:
+        return await self._request("POST", endpoint, json=json_data, **kwargs)
+
+    async def delete(self, endpoint: str, **kwargs: Any) -> bool:
+        await self._request("DELETE", endpoint, **kwargs)
+        return True
+
+    async def patch(self, endpoint: str, json_data: Dict[str, Any], **kwargs: Any) -> Any:
+        return await self._request("PATCH", endpoint, json=json_data, **kwargs)
+
+```
+# src/xoadmin/storage.py
+```
+from .api import XOApi
+from typing import Dict, List, Any
+
+class StorageManagement:
+    """Manage storage operations within Xen Orchestra."""
+    
+    def __init__(self, api: XOApi) -> None:
+        self.api = api
+
+    def list_srs(self) -> List[Dict[str, Any]]:
+        """List all Storage Repositories (SRs)."""
+        return self.api.get('rest/v0/srs')
+
+    def create_vdi(self, sr_id: str, size: int, name_label: str) -> Dict[str, Any]:
+        """Create a new VDI on the specified SR."""
+        vdi_data = {"size": size, "sr": sr_id, "name_label": name_label}
+        return self.api.post('rest/v0/vdis', json_data=vdi_data)
+
+    def delete_vdi(self, vdi_id: str) -> bool:
+        """Delete a specified VDI."""
+        return self.api.delete(f'rest/v0/vdis/{vdi_id}')
+
+```
+# src/xoadmin/__init__.py
+```
+
+```
+# src/xoadmin/vm.py
+```
+from xoadmin.api import XOApi
+from typing import Dict, List, Any
+
+class VMManagement:
+    """Handles VM operations within Xen Orchestra."""
+    
+    def __init__(self, api: XOApi) -> None:
+        self.api = api
+
+    def list_vms(self) -> List[Dict[str, Any]]:
+        """List all VMs."""
+        return self.api.get('rest/v0/vms')
+
+    def start_vm(self, vm_id: str) -> Dict[str, Any]:
+        """Start a specified VM."""
+        return self.api.post(f'rest/v0/vms/{vm_id}/start', json_data={})
+
+    def stop_vm(self, vm_id: str) -> Dict[str, Any]:
+        """Stop a specified VM."""
+        return self.api.post(f'rest/v0/vms/{vm_id}/stop', json_data={})
+
+    def delete_vm(self, vm_id: str) -> bool:
+        """Delete a specified VM."""
+        return self.api.delete(f'rest/v0/vms/{vm_id}')
+
+```
+# src/xoadmin/utils.py
+```
+import logging
+import os
+from colorlog import ColoredFormatter
+
+# Global logger variable
+logger = None
+
+
+def init_logging():
+    global logger
+    if logger is None:
+        debug_mode = os.getenv("DEBUG", "").lower() in ["true", "1"]
+        logger = logging.getLogger("xoadmin")
+        logger.setLevel(logging.INFO)
+
+
+
+        formatter = ColoredFormatter(
+            fmt=(
+                "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(module)s.%(funcName)s:\033[97m%(lineno)d\033[0m - \033[97m%(message)s\033[0m"
+                if debug_mode
+                else "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - \033[97m%(message)s\033[0m"
+            ),
+            datefmt=None,  # You can specify your date format here
+            reset=True,
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red,bg_white",
+            },
+            secondary_log_colors={},
+            style="%",
+        )
+
+        # Handler for printing logs to the console
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+
+        # Adjusted formatter to include module names
+
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+
+def get_logger(module_name=None):
+    global logger
+    if logger is None:
+        init_logging()
+    if module_name:
+        # Create or retrieve a logger with the name specified by module_name
+        module_logger = logging.getLogger(module_name)
+        module_logger.handlers = logger.handlers  # Copy handlers from the global logger
+        module_logger.setLevel(logger.level)  # Ensure logging level consistency
+        return module_logger
+    return logger
+```
+# src/xoadmin/user.py
+```
+from xoadmin.api import XOApi
+from typing import Dict, List, Any
+
+class UserManagement:
+    """Manage user operations within Xen Orchestra."""
+    
+    def __init__(self, api: XOApi) -> None:
+        self.api = api
+
+    def list_users(self) -> List[Dict[str, Any]]:
+        """List all users."""
+        return self.api.get('rest/v0/users')
+
+    def create_user(self, email: str, password: str, permission: str = "none") -> Dict[str, Any]:
+        """Create a new user with the specified details."""
+        user_data = {"email": email, "password": password, "permission": permission}
+        return self.api.post('rest/v0/users', json_data=user_data)
+    
+    def delete_user(self, user_id: str) -> bool:
+        """Delete a user by their ID."""
+        return self.api.delete(f'rest/v0/users/{user_id}')
+
+```
+# src/xoadmin/manager.py
+```
+import asyncio
+from typing import Any
+
+from xoadmin.api import XOApi
+from xoadmin.user import UserManagement
+from xoadmin.vm import VMManagement
+from xoadmin.storage import StorageManagement
+from xoadmin.utils import get_logger
+
+logger = get_logger(__name__)
+
+class XOAManager:
+    """
+    A manager class for orchestrating interactions with the Xen Orchestra API,
+    handling authentication, and managing resources.
+    """
+    
+    def __init__(self, base_url: str,verify_ssl:bool=True):
+        self.base_url = base_url
+        self.api = XOApi(self.base_url,verify_ssl=verify_ssl)
+        # The management classes will be initialized after authentication
+        self.user_management = None
+        self.vm_management = None
+        self.storage_management = None
+        
+    def verify_ssl(self,enabled:bool) -> None:
+        self.api.verify_ssl(enabled)
+        logger.info(f"SSL verification {'enabled' if enabled else 'disabled'}.")
+        
+    async def authenticate(self, username: str, password: str) -> None:
+        """
+        Authenticates with the Xen Orchestra API using the provided credentials
+        and initializes the management classes.
+        """
+        await self.api.authenticate_with_credentials(username, password)
+
+        # Initialize management classes with the authenticated API instance
+        self.user_management = UserManagement(self.api)
+        self.vm_management = VMManagement(self.api)
+        self.storage_management = StorageManagement(self.api)
+
+        logger.info("Authenticated and ready to manage Xen Orchestra.")
+
+    async def create_user(self, email: str, password: str, permission: str = "none") -> Any:
+        """
+        Creates a new user with the specified email, password, and permission level."""
+        # Directly use the method from UserManagement
+        return await self.user_management.create_user(email, password, permission)
+
+    async def delete_user(self, user_email: str) -> bool:
+        """
+        Deletes a user by email.
+        """
+        users = await self.user_management.list_users()
+        user = next((user for user in users if user['email'] == user_email), None)
+        if user:
+            return await self.user_management.delete_user(user['id'])
+        logger.warning(f"User {user_email} not found.")
+        return False
+    
+    async def list_all_vms(self) -> Any:
+        """
+        Lists all VMs.
+        """
+        return await self.vm_management.list_vms()
+
+    async def create_vdi(self, sr_id: str, size: int, name_label: str) -> Any:
+        """
+        Creates a new VDI on the specified SR.
+        """
+        return await self.storage_management.create_vdi(sr_id, size, name_label)
+
+    async def close(self) -> None:
+        """
+        Closes the session.
+        """
+        await self.api.close()
+
+# Example usage
+async def main():
+    manager = XOAManager("https://localhost:443",verify_ssl=False)
+    await manager.authenticate(username="admin",password="password")
+    vms = await manager.list_all_vms()
+    print(vms)
+    await manager.close()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+```

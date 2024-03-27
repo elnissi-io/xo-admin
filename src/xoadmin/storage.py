@@ -1,4 +1,5 @@
-from .api import XOApi
+
+from xoadmin.api import XOApi
 from typing import Dict, List, Any
 
 class StorageManagement:

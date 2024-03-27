@@ -1,8 +1,5 @@
 import logging
 import os
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
-from avaris.defaults import Defaults
 from colorlog import ColoredFormatter
 
 # Global logger variable
@@ -44,19 +41,6 @@ def init_logging():
         # Adjusted formatter to include module names
 
         console_handler.setFormatter(formatter)
-
-        # Adding both handlers to the logger
-        if debug_mode:
-
-            log_file_path = Defaults.DEFAULT_LOG_FILE
-
-            # Handler for writing logs to a file
-            file_handler = RotatingFileHandler(
-                filename=str(log_file_path), maxBytes=10000000, backupCount=5
-            )
-            file_handler.setFormatter(formatter)
-            file_handler.setLevel(logging.DEBUG)
-            logger.addHandler(file_handler)
         logger.addHandler(console_handler)
 
 
