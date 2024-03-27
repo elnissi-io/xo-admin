@@ -5,13 +5,14 @@ import websockets
 from uuid import uuid4
 from xoadmin.utils import get_logger
 from typing import Dict
-
+import traceback
+import uuid
 logger = get_logger()
 
-class XoError(Exception):
+class XoSocketError(Exception):
     """Exception raised for errors encountered within the Xo class."""
 
-class Xo:
+class XoSocket:
     """
     A client for establishing a WebSocket connection with a Xen Orchestra server
     and performing JSON-RPC calls over this connection.
@@ -35,7 +36,7 @@ class Xo:
     def set_credentials(self,username:str, password:str)->None:
         self.credentials = {"email": str(username), "password": str(password)}
   
-    async def open(self):
+    async def open(self)-> bool:
         """
         Opens the WebSocket connection and signs in with the provided credentials.
         """
@@ -49,11 +50,13 @@ class Xo:
             self.websocket = await websockets.connect(self.url, ssl=ssl_context if self.url.startswith("wss://") else None)
             logger.info("Connection opened.")
             if self.credentials:
-                logger.info(f"{self.credentials}")
                 await self.sign_in(self.credentials)
+                logger.info("Sign in successful.")
         except Exception as e:
             logger.error(f"Error opening WebSocket connection: {e}")
             raise
+        
+        return True
     async def close(self):
         """
         Closes the WebSocket connection.
@@ -72,7 +75,7 @@ class Xo:
         """
         # Allow session.signIn method, but block other session.* methods
         if method.startswith('session.') and method != 'session.signIn':
-            raise XoError("session.*() methods are disabled from this interface, except session.signIn")
+            raise XoSocketError("session.*() methods are disabled from this interface, except session.signIn")
         
         if params is None:
             params = {}
@@ -89,30 +92,46 @@ class Xo:
         return response_data
 
     async def sign_in(self, credentials: dict):
-        """
-        Signs into the Xen Orchestra server using the provided credentials.
-        
-        :param credentials: A dictionary containing login credentials, specifically
-                            'email' and 'password'.
-        :raises XoError: If sign-in fails.
-        """
         response = await self.call('session.signIn', credentials)
-        if 'result' in response:
+        if 'result' in response and 'authenticationToken' in response['result']:
             self.user = response['result']
             logger.info("Signed in as:", self.user)
         elif 'error' in response:
-            raise XoError(f"Failed to sign in: {response['error']}")
-# Example Usage
-async def main():
-    xo = Xo(url="wss://localhost:443", credentials={"email": "admin@admin.net", "password": "admin"}, verify_ssl=False)
-    await xo.open()
-    # Perform calls
-    try:
-        result = await xo.call('acl.get', {})
-        logger.info("Success:", result)
-    except Exception as e:
-        logger.error("Failure:", e)
-    await xo.close()
+            raise XoSocketError(f"Failed to sign in: {response['error']}")
+        
+    async def create_token(self, description="xoadmin token"):
+            """
+            Creates an authentication token, including client information.
+            """
+            # Generate a simple client ID or use more complex logic as needed
+            client_id = str(uuid.uuid4())
+            client_info = {"id": client_id}
+            params = {
+                "description": description,
+                "client": client_info,
+            }
+            response = await self.call('token.create', params)
+            if 'result' in response:
+                token_id = response['result']
+                logger.info(f"Token created successfully: {token_id}")
+                return token_id
+            else:
+                error_msg = response.get('error', {}).get('message', 'Unknown error')
+                logger.error(f"Failed to create token: {error_msg}")
+                raise XoSocketError(f"Failed to create token: {error_msg}")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# Example Usage
+# async def main():
+#     xo = XoSocket(url="ws://localhost:80", credentials={"email": "admin", "password": "password"}, verify_ssl=False)
+#     await xo.open()
+#     # Assuming successful authentication has occurred
+#     try:
+#         token_id = await xo.create_token(description="My API Token")
+#         logger.info(f"Token created successfully: {token_id}")
+#         # Store or use the token_id as needed for authenticated API interactions
+#     except Exception as e:
+#         logger.error(f"{e}")
+#     await xo.close()
+
+# if __name__ == "__main__":
+#     asyncio.run(main())

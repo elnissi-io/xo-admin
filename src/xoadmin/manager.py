@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from xoadmin.api import XOApi
+from xoadmin.api import XOAPI
 from xoadmin.user import UserManagement
 from xoadmin.vm import VMManagement
 from xoadmin.storage import StorageManagement
@@ -17,7 +17,7 @@ class XOAManager:
     
     def __init__(self, base_url: str,verify_ssl:bool=True):
         self.base_url = base_url
-        self.api = XOApi(self.base_url,verify_ssl=verify_ssl)
+        self.api = XOAPI(self.base_url,verify_ssl=verify_ssl)
         # The management classes will be initialized after authentication
         self.user_management = None
         self.vm_management = None

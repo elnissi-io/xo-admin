@@ -1,11 +1,11 @@
 
-from xoadmin.api import XOApi
+from xoadmin.api import XOAPI
 from typing import Dict, List, Any
 
 class StorageManagement:
     """Manage storage operations within Xen Orchestra."""
     
-    def __init__(self, api: XOApi) -> None:
+    def __init__(self, api: XOAPI) -> None:
         self.api = api
 
     def list_srs(self) -> List[Dict[str, Any]]:

@@ -1,10 +1,10 @@
-from xoadmin.api import XOApi
+from xoadmin.api import XOAPI
 from typing import Dict, List, Any
 
 class VMManagement:
     """Handles VM operations within Xen Orchestra."""
     
-    def __init__(self, api: XOApi) -> None:
+    def __init__(self, api: XOAPI) -> None:
         self.api = api
 
     def list_vms(self) -> List[Dict[str, Any]]:
