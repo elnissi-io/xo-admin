@@ -3,7 +3,7 @@ name = "xoadmin"
 version = "0.1.0"
 description = "bindings and wrappers to manage an XOA instance"
 authors = ["dennis"]
-license = "MIT"
+license = "Apache 2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
