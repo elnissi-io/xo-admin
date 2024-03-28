@@ -1,0 +1,31 @@
+name: Test Token and Connection
+
+on: 
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Repository to test (pypi/testpypi)'
+        required: true
+        default: 'testpypi'
+
+jobs:
+  test-connection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Add Poetry to path
+        run: echo "${HOME}/.poetry/bin" >> $GITHUB_PATH
+      - name: Configure Poetry
+        run: |
+          if [ "${{ github.event.inputs.repository }}" = "pypi" ]; then
+            poetry config pypi-token.pypi ${{ secrets.PYPI_CI_TOKEN }}
+          else
+            poetry config pypi-token.testpypi ${{ secrets.PYPI_TEST_CI_TOKEN }}
+            poetry config repositories.testpypi https://test.pypi.org/legacy/
+          fi
+      - name: Test Token and Connection
+        run: |
+          echo "Connection test successful."
