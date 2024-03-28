@@ -17,15 +17,33 @@ class XOAManager:
     
     def __init__(self, base_url: str,verify_ssl:bool=True):
         self.base_url = base_url
-        self.api = XOAPI(self.base_url,verify_ssl=verify_ssl)
+        self.ws_url = self._convert_http_to_ws(base_url)
+        self.api = XOAPI(self.base_url,ws_url=self.ws_url,verify_ssl=verify_ssl)
         # The management classes will be initialized after authentication
         self.user_management = None
         self.vm_management = None
         self.storage_management = None
+    
+    def _convert_http_to_ws(self, url: str) -> str:
+        """
+        Converts an HTTP or HTTPS URL to its WebSocket equivalent (WS or WSS).
+        
+        Parameters:
+            url (str): The HTTP or HTTPS URL.
+        
+        Returns:
+            str: The converted WS or WSS URL.
+        """
+        if url.startswith("https://"):
+            return url.replace("https://", "wss://", 1)
+        elif url.startswith("http://"):
+            return url.replace("http://", "ws://", 1)
+        else:
+            raise ValueError("URL must start with http:// or https://")
         
     def verify_ssl(self,enabled:bool) -> None:
         self.api.verify_ssl(enabled)
-        logger.info(f"SSL verification {'enabled' if enabled else 'disabled'}.")
+        logger.info(f"SSL verification {'enabled' if self.api.ws.verify_ssl else 'disabled'}.")
         
     async def authenticate(self, username: str, password: str) -> None:
         """

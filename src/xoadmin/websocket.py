@@ -32,6 +32,8 @@ class XoSocket:
         self.user = None
         self.websocket = None
         self.verify_ssl = verify_ssl
+    def is_verify_ssl(self):
+        return self.verify_ssl
         
     def set_credentials(self,username:str, password:str)->None:
         self.credentials = {"email": str(username), "password": str(password)}
@@ -113,7 +115,7 @@ class XoSocket:
             response = await self.call('token.create', params)
             if 'result' in response:
                 token_id = response['result']
-                logger.info(f"Token created successfully: {token_id}")
+                logger.info(f"Token created successfully")
                 return token_id
             else:
                 error_msg = response.get('error', {}).get('message', 'Unknown error')

@@ -59,13 +59,24 @@ class XOAPI:
         logger.info("Authentication token refreshed.")
 
     async def _request(self, method: str, endpoint: str, **kwargs: Any) -> Any:
-        """Sends a request, attempting a token refresh on 401 responses."""
-        headers = {"Authorization": f"Bearer {self.auth_token}"}  # Adjust based on actual auth header
-        response = await self.session.request(method, f"{self.base_url}/{endpoint}", headers=headers, **kwargs)
+        # Prepare the URL
+        url = f"{self.base_url}/{endpoint}"
+        # Ensure cookies are correctly set for the session
+        if self.auth_token:
+            self.session.cookies.set('authenticationToken', self.auth_token)
+        else:
+            logger.error("No authentication token available.")
+            raise AuthenticationError("Authentication required.")
+        # Make the request
+        response = await self.session.request(method, url, **kwargs)
+        # Check for 401 Unauthorized response and attempt to refresh the token
         if response.status_code == 401:
+            logger.warning(f"Received 401 Unauthorized for {endpoint}, attempting token refresh.")
             await self._refresh_token()
-            headers["Authorization"] = f"Bearer {self.auth_token}"
-            response = await self.session.request(method, f"{self.base_url}/{endpoint}", headers=headers, **kwargs)
+            # Retry the request after refreshing the token
+            response = await self.session.request(method, url, **kwargs)
+
+        # Check for successful response
         response.raise_for_status()
         return response.json()
 
