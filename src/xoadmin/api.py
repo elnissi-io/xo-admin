@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 # Assuming you've set up get_logger in .utils
 from xoadmin.utils import get_logger
-from xoadmin.websocket import XoSocket
+from xoadmin.websocket import XOSocket
 
 logger = get_logger(__name__)
 
@@ -19,10 +19,13 @@ class XOAPI:
         # Initialize WebSocket connection for authentication
         self.ws_url= ws_url or "ws://localhost"
         self.credentials = credentials or {"email":"admin@admin.net","password":"admin"}
-        self.ws = XoSocket(url=self.ws_url, verify_ssl=verify_ssl)
+        self.ws = XOSocket(url=self.ws_url, verify_ssl=verify_ssl)
     
+    def get_socket(self) -> XOSocket:
+        return self.ws
+
     def verify_ssl(self,enabled:bool):
-        self.ws = XoSocket(url=self.ws_url, verify_ssl=enabled)
+        self.ws = XOSocket(url=self.ws_url, verify_ssl=enabled)
 
     def set_credentials(self,username:str,password:str):
         self.credentials={"email":str(username),"password":str(password)}

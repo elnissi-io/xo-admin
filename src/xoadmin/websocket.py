@@ -12,7 +12,7 @@ logger = get_logger()
 class XoSocketError(Exception):
     """Exception raised for errors encountered within the Xo class."""
 
-class XoSocket:
+class XOSocket:
     """
     A client for establishing a WebSocket connection with a Xen Orchestra server
     and performing JSON-RPC calls over this connection.
@@ -91,6 +91,11 @@ class XoSocket:
         await self.websocket.send(message)
         response = await self.websocket.recv()
         response_data = json.loads(response)
+        
+        if 'error' in response_data:
+            error_msg = response_data['error'].get('message', 'Unknown error')
+            raise Exception(f"Error from server: {error_msg}")
+        
         return response_data
 
     async def sign_in(self, credentials: dict):
@@ -124,7 +129,7 @@ class XoSocket:
 
 # Example Usage
 # async def main():
-#     xo = XoSocket(url="ws://localhost:80", credentials={"email": "admin", "password": "password"}, verify_ssl=False)
+#     xo = XOSocket(url="ws://localhost:80", credentials={"email": "admin", "password": "password"}, verify_ssl=False)
 #     await xo.open()
 #     # Assuming successful authentication has occurred
 #     try:

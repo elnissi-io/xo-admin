@@ -1,0 +1,36 @@
+{
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.formatting.provider": "yapf",
+  "diffEditor.maxFileSize": 0,
+  "diffEditor.maxComputationTime": 0,
+  "editor.formatOnType": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.quickSuggestions": {
+    "other": false,
+    "comments": false,
+    "strings": false
+  },
+  "editor.suggest.localityBonus": true,
+  "python.formatting.yapfArgs": [
+    "--style",
+    "{based_on_style: google, COLUMN_LIMIT: 100, SPLIT_BEFORE_BITWISE_OPERATOR: true}"
+  ],
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "terminal.integrated.env.linux": {
+    "WORKINGDIR": "${workspaceRoot}",
+    "DEBUG":"TRUE"
+  },
+  "terminal.integrated.env.windows": {
+    "WORKINGDIR": "${workspaceRoot}",
+    "DEBUG":"TRUE"
+  },
+  "terminal.integrated.env.osx": {
+    "WORKINGDIR": "${workspaceRoot}",
+    "DEBUG":"TRUE"
+  }
+}

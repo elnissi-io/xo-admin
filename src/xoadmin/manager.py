@@ -6,6 +6,7 @@ from xoadmin.user import UserManagement
 from xoadmin.vm import VMManagement
 from xoadmin.storage import StorageManagement
 from xoadmin.utils import get_logger
+from xoadmin.host import HostManagement
 
 logger = get_logger(__name__)
 
@@ -56,7 +57,7 @@ class XOAManager:
         self.user_management = UserManagement(self.api)
         self.vm_management = VMManagement(self.api)
         self.storage_management = StorageManagement(self.api)
-
+        self.host_management = HostManagement(self.api)
         logger.info("Authenticated and ready to manage Xen Orchestra.")
 
     async def create_user(self, email: str, password: str, permission: str = "none") -> Any:
@@ -76,6 +77,12 @@ class XOAManager:
         logger.warning(f"User {user_email} not found.")
         return False
     
+    async def add_host(self,username:str,password:str,autoConnect:bool=True,allowUnauthorized:bool=False):
+        params = {"username":str(username),
+                  }
+        await host_management.add_host(host_details)
+        print(f"Host {HYPERVISOR_IP} added successfully.")
+            
     async def list_all_vms(self) -> Any:
         """
         Lists all VMs.
