@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 
 from xoadmin.api import XOAPI
+from xoadmin.error import AuthenticationError, ServerError, XOSocketError
 from xoadmin.host import HostManagement
 from xoadmin.storage import StorageManagement
 from xoadmin.user import UserManagement
@@ -69,7 +70,8 @@ class XOAManager:
         """
         Creates a new user with the specified email, password, and permission level."""
         # Directly use the method from UserManagement
-        return await self.user_management.create_user(email, password, permission)
+        await self.user_management.create_user(email, password, permission)
+        logger.info(f"User {email} created successfully.")
 
     async def delete_user(self, user_email: str) -> bool:
         """
@@ -90,16 +92,25 @@ class XOAManager:
         autoConnect: bool = True,
         allowUnauthorized: bool = False,
     ):
-        params = {
-            "host": str(host),
-            "username": str(username),
-            "password": str(password),
-            "autoConnect": str(autoConnect),
-            "allowUnauthorized": str(allowUnauthorized),
-        }
-        result = await self.host_management.add_host(params)
-        logger.info(f"Host {host} added.")
-        print(result)
+        try:
+            result = await self.host_management.add_host(
+                host=host,
+                username=username,
+                password=password,
+                autoConnect=autoConnect,
+                allowUnauthorized=allowUnauthorized,
+            )
+            logger.info(f"Host {host} added successfully.")
+        except XOSocketError as e:
+            # Now, we can decide how to handle the error based on its message
+            if "server already exists" in str(e):
+                logger.error(f"Cannot add host {host}: The server already exists.")
+            elif "authentication failed" in str(e):
+                logger.error(f"Cannot add host {host}: Authentication failed.")
+            else:
+                logger.error(f"Failed to add host {host}: {e}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while adding host {host}: {e}")
 
     async def list_all_vms(self) -> Any:
         """

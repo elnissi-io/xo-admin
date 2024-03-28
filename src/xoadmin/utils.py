@@ -1,5 +1,6 @@
 import logging
 import os
+
 from colorlog import ColoredFormatter
 
 # Global logger variable
@@ -12,8 +13,6 @@ def init_logging():
         debug_mode = os.getenv("DEBUG", "").lower() in ["true", "1"]
         logger = logging.getLogger("xoadmin")
         logger.setLevel(logging.INFO)
-
-
 
         formatter = ColoredFormatter(
             fmt=(
