@@ -13,9 +13,9 @@ def cli():
     """XOA Admin CLI tool for managing Xen Orchestra instances."""
     pass
 
+@coro
 @cli.command()
 @click.option('-c', '--config', type=click.Path(exists=True), required=True, help='Path to the configuration file.')
-@coro
 async def configure(config):
     """Configure Xen Orchestra instances."""
     configurator = XOAConfigurator(config)
