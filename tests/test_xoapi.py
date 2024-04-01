@@ -1,8 +1,8 @@
 import pytest
 from httpx import Response
 
-from xoadmin.api import XOAPI
-from xoadmin.websocket import XOSocket
+from xoadmin.api.api import XOAPI
+from xoadmin.api.websocket import XOSocket
 
 
 @pytest.mark.asyncio
