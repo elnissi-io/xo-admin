@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from xoadmin.api import XOAPI
+from xoadmin.api.api import XOAPI
 
 
 class StorageManagement:

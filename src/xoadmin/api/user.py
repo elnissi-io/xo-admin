@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
-from xoadmin.api import XOAPI
-from xoadmin.error import XOSocketError
+from xoadmin.api.api import XOAPI
+from xoadmin.api.error import XOSocketError
 from xoadmin.utils import get_logger
 
 logger = get_logger(__name__)

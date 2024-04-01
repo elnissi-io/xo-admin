@@ -1,6 +1,6 @@
 # src/xoadmin/host.py
 
-from xoadmin.api import XOAPI
+from xoadmin.api.api import XOAPI
 
 
 class HostManagement:

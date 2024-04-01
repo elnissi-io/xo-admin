@@ -1,13 +1,12 @@
-import asyncio
 import json
 import ssl
+import websockets
 import uuid
 from typing import Dict
 from uuid import uuid4
 
-import websockets
 
-from xoadmin.error import AuthenticationError, ServerError, XOSocketError
+from xoadmin.api.error import AuthenticationError, ServerError, XOSocketError
 from xoadmin.utils import get_logger
 
 logger = get_logger()

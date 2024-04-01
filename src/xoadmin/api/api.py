@@ -4,7 +4,7 @@ import httpx
 
 # Assuming you've set up get_logger in .utils
 from xoadmin.utils import get_logger
-from xoadmin.websocket import XOSocket
+from xoadmin.api.websocket import XOSocket
 
 logger = get_logger(__name__)
 
