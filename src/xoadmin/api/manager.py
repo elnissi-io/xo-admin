@@ -1,13 +1,13 @@
 import asyncio
 from typing import Any
 
-from xoadmin.api import XOAPI
-from xoadmin.error import AuthenticationError, ServerError, XOSocketError
-from xoadmin.host import HostManagement
-from xoadmin.storage import StorageManagement
-from xoadmin.user import UserManagement
+from xoadmin.api.api import XOAPI
+from xoadmin.api.error import AuthenticationError, ServerError, XOSocketError
+from xoadmin.api.host import HostManagement
+from xoadmin.api.storage import StorageManagement
+from xoadmin.api.user import UserManagement
 from xoadmin.utils import get_logger
-from xoadmin.vm import VMManagement
+from xoadmin.api.vm import VMManagement
 
 logger = get_logger(__name__)
 

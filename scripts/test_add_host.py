@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from xoadmin.manager import XOAManager
+from xoadmin.api.manager import XOAManager
 
 
 async def main():
