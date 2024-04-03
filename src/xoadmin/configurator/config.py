@@ -1,7 +1,9 @@
 # Assuming these models exist in xoa_container/models/config.py or similar
 
-from pydantic import BaseModel
 from typing import List, Optional
+
+from pydantic import BaseModel
+
 
 class HypervisorConfig(BaseModel):
     host: str
@@ -10,14 +12,21 @@ class HypervisorConfig(BaseModel):
     autoConnect: Optional[bool] = True
     allowUnauthorized: Optional[bool] = False
 
+
 class XOAInstance(BaseModel):
     host: str
-    username: str 
+    rest_api: Optional[str] = None
+    ws_url: Optional[str] = None
+    username: str
     password: str
+
+
 class UserConfig(BaseModel):
     username: str
     password: str
     permission: Optional[str] = "none"
+
+
 class AppConfig(BaseModel):
     xoa: XOAInstance
     hypervisors: List[HypervisorConfig]

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xoadmin"
-version = "1.1.1"
+version = "1.2.0"
 description = "bindings and wrappers to manage an XOA instance"
 authors = ["dennis <it.admin@elnissi.co.id>"]
 license = "Apache 2.0"
@@ -20,7 +20,7 @@ click = "^8.1.7"
 pyyaml = "^6.0.1"
 
 [tool.poetry.scripts]
-xoadmin = "xoadmin.__main__:cli"
+xoadmin = "xoadmin.cli.cli:cli"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"

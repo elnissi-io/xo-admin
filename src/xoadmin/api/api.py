@@ -19,12 +19,12 @@ class XOAPI:
 
     def __init__(
         self,
-        base_url: str,
+        rest_base_url: str,
         ws_url: str = None,
         credentials: Dict[str, str] = None,
         verify_ssl: bool = True,
     ) -> None:
-        self.base_url = base_url
+        self.rest_base_url = rest_base_url
         self.session = httpx.AsyncClient(verify=verify_ssl, follow_redirects=True)
         self.auth_token = None
         # Initialize WebSocket connection for authentication
@@ -82,7 +82,7 @@ class XOAPI:
 
     async def _request(self, method: str, endpoint: str, **kwargs: Any) -> Any:
         # Prepare the URL
-        url = f"{self.base_url}/{endpoint}"
+        url = f"{self.rest_base_url}/{endpoint}"
         # Ensure cookies are correctly set for the session
         if self.auth_token:
             self.session.cookies.set("authenticationToken", self.auth_token)
@@ -101,8 +101,8 @@ class XOAPI:
             response = await self.session.request(method, url, **kwargs)
 
         # Check for successful response
-        response.raise_for_status()
-        return response.json()
+        await response.raise_for_status()
+        return await response.json()
 
     async def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return await self._request("GET", endpoint, params=params)

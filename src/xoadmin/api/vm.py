@@ -11,19 +11,19 @@ class VMManagement:
 
     async def list_vms(self) -> List[Dict[str, Any]]:
         """List all VMs."""
-        return self.api.get("rest/v0/vms")
+        return await self.api.get("rest/v0/vms")
 
     async def start_vm(self, vm_id: str) -> Dict[str, Any]:
         """Start a specified VM."""
-        return self.api.post(f"rest/v0/vms/{vm_id}/start", json_data={})
+        return await self.api.post(f"rest/v0/vms/{vm_id}/start", json_data={})
 
     async def stop_vm(self, vm_id: str) -> Dict[str, Any]:
         """Stop a specified VM."""
-        return self.api.post(f"rest/v0/vms/{vm_id}/stop", json_data={})
+        return await self.api.post(f"rest/v0/vms/{vm_id}/stop", json_data={})
 
     async def delete_vm(self, vm_id: str) -> bool:
         """Delete a specified VM."""
-        return self.api.delete(f"rest/v0/vms/{vm_id}")
+        return await self.api.delete(f"rest/v0/vms/{vm_id}")
 
     async def create_vm_from_template(
         self, template_id: str, name: str, description: str = ""

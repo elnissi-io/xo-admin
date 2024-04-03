@@ -19,7 +19,7 @@ async def test_authenticate_with_websocket(mocker):
     )
     mock_close = mocker.patch.object(XOSocket, "close", return_value=None)
 
-    xoapi = XOAPI(base_url="http://test", ws_url="ws://test", verify_ssl=False)
+    xoapi = XOAPI(rest_base_url="http://test", ws_url="ws://test", verify_ssl=False)
     await xoapi.authenticate_with_websocket("test_user", "test_pass")
 
     mock_open.assert_called_once()
@@ -28,15 +28,30 @@ async def test_authenticate_with_websocket(mocker):
     assert xoapi.auth_token == "test_token"
 
 
-def test_convert_http_to_ws():
-    manager = XOAManager("http://localhost:80")
-    assert manager._convert_http_to_ws("http://localhost:80") == "ws://localhost:80"
+def test_sanitize_ws():
+    # Test case when SSL verification is enabled (default)
+    manager = XOAManager("localhost", verify_ssl=True)
+    assert manager._sanitize_ws("localhost") == "wss://localhost"
 
-    manager = XOAManager("https://localhost:443")
-    assert manager._convert_http_to_ws("https://localhost:443") == "wss://localhost:443"
+    # Test case when SSL verification is disabled
+    manager = XOAManager("localhost", verify_ssl=False)
+    assert manager._sanitize_ws("localhost") == "ws://localhost"
 
+    # Additional test case for HTTPS with default port (443)
+    manager = XOAManager("localhost", verify_ssl=True)
+    assert manager._sanitize_ws("localhost") == "wss://localhost"
+
+    # Test case for HTTPS with non-default port
+    manager = XOAManager("localhost", verify_ssl=True)
+    assert manager._sanitize_ws("localhost:8443") == "wss://localhost:8443"
+
+    # Test case for HTTP with non-default port
+    manager = XOAManager("localhost", verify_ssl=False)
+    assert manager._sanitize_ws("localhost:8080") == "ws://localhost:8080"
+
+    # Test case for invalid URL
     with pytest.raises(ValueError):
-        manager._convert_http_to_ws("ftp://localhost:21")
+        manager._sanitize_ws("ftp://localhost:21")
 
 
 @pytest.mark.asyncio
@@ -46,7 +61,7 @@ async def test_verify_ssl(mocker):
     manager = XOAManager("http://test", verify_ssl=False)
     manager.api = XOAPI("http://test", "ws://test")
     manager.api.ws = mocker.Mock()  # Mock the ws attribute directly
-    manager.verify_ssl(True)
+    manager.set_verify_ssl(True)
     mock_verify_ssl.assert_called_with(True)
 
 
