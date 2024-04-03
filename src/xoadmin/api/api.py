@@ -2,9 +2,10 @@ from typing import Any, Dict, Optional
 
 import httpx
 
+from xoadmin.api.websocket import XOSocket
+
 # Assuming you've set up get_logger in .utils
 from xoadmin.utils import get_logger
-from xoadmin.api.websocket import XOSocket
 
 logger = get_logger(__name__)
 
