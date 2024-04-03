@@ -31,11 +31,3 @@ jobs:
 
     - name: Build Package
       run: poetry build
-
-    - name: Publish to TestPyPI on PR
-      if: github.event_name == 'pull_request'
-      run: |
-        poetry config pypi-token.testpypi ${{ secrets.PYPI_TEST_CI_TOKEN }}
-        poetry publish --repository testpypi
-      env:
-        POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.PYPI_TEST_CI_TOKEN }}
