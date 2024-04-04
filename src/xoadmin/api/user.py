@@ -13,10 +13,14 @@ class UserManagement:
     def __init__(self, api: XOAPI) -> None:
         self.api = api
 
-    async def list_users(self) -> List[Dict[str, Any]]:
-        """List all users."""
-        # Assuming listing users still works via REST API
+    async def list_users(self) -> List[str]:
+        """List all users by their API paths."""
         return await self.api.get("rest/v0/users")
+
+    async def get_user_details(self, user_path: str) -> Dict[str, Any]:
+        """Fetch detailed information for a user given their API path."""
+        user_id = user_path.split("/")[-1]
+        return await self.api.get(f"rest/v0/users/{user_id}")
 
     async def create_user(
         self, email: str, password: str, permission: str = "none"
@@ -66,16 +70,12 @@ class UserManagement:
         try:
             # Prepare the parameters for the JSON-RPC call
             params = {"id": user_id}
-
             # Utilize the WebSocket connection from the api instance
             socket = self.api.get_socket()
             await socket.open()  # Ensure the socket is open
-
             # Make the JSON-RPC call to delete the user
             result = await socket.call("user.delete", params)
-
             await socket.close()  # Close the socket after the call
-
             # Check the result for success or failure
             if "result" in result and result["result"]:
                 # Assuming the 'result' contains success information

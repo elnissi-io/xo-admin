@@ -6,8 +6,8 @@ from xoadmin.api.error import AuthenticationError, ServerError, XOSocketError
 from xoadmin.api.host import HostManagement
 from xoadmin.api.storage import StorageManagement
 from xoadmin.api.user import UserManagement
-from xoadmin.utils import get_logger
 from xoadmin.api.vm import VMManagement
+from xoadmin.utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -18,35 +18,78 @@ class XOAManager:
     handling authentication, and managing resources.
     """
 
-    def __init__(self, base_url: str, verify_ssl: bool = True):
-        self.base_url = base_url
-        self.ws_url = self._convert_http_to_ws(base_url)
-        self.api = XOAPI(self.base_url, ws_url=self.ws_url, verify_ssl=verify_ssl)
+    def __init__(
+        self,
+        host: str,
+        rest_base_url: str = None,
+        ws_url: str = None,
+        verify_ssl: bool = True,
+    ):
+        self.host = host
+        self.verify_ssl = verify_ssl
+        self.rest_base_url = self._sanitize_rest_base_url(rest_base_url, host)
+        self.ws_url = self._sanitize_ws(ws_url)
+        self.api = XOAPI(
+            self.rest_base_url, ws_url=self.ws_url, verify_ssl=self.verify_ssl
+        )
         # The management classes will be initialized after authentication
         self.user_management = None
         self.vm_management = None
         self.storage_management = None
 
-    def _convert_http_to_ws(self, url: str) -> str:
+    def _sanitize_rest_base_url(self, rest_base_url: str, host: str) -> str:
         """
-        Converts an HTTP or HTTPS URL to its WebSocket equivalent (WS or WSS).
+        Sanitizes the REST base URL, ensuring it includes the protocol and default port.
 
         Parameters:
-            url (str): The HTTP or HTTPS URL.
+            rest_base_url (str): The REST base URL.
+            host (str): The host address.
+            verify_ssl (bool): Whether to verify SSL certificates.
 
         Returns:
-            str: The converted WS or WSS URL.
+            str: The sanitized REST base URL.
         """
-        if url.startswith("https://"):
-            return url.replace("https://", "wss://", 1)
-        elif url.startswith("http://"):
-            return url.replace("http://", "ws://", 1)
+        if not rest_base_url:
+            protocol = "https" if self.verify_ssl else "http"
+            return f"{protocol}://{host}"
+        elif rest_base_url.startswith(("http://", "https://")):
+            return rest_base_url
         else:
             raise ValueError("URL must start with http:// or https://")
 
-    def verify_ssl(self, enabled: bool) -> None:
-        self.api.verify_ssl(enabled)
-        logger.info(
+    def _sanitize_ws(self, ws_url: str) -> str:
+        """
+        Sanitizes the WebSocket URL, ensuring it follows the correct format.
+
+        Parameters:
+            ws_url (str): The WebSocket URL or hostname.
+
+        Returns:
+            str: The sanitized WebSocket URL.
+        """
+        protocol = "wss" if self.verify_ssl else "ws"
+        if not ws_url:
+            return f"{protocol}://{self.host}"
+
+        if "://" in ws_url:
+            if ws_url.startswith(("ws://", "wss://", "http://", "https://")):
+                # Replace http/https with appropriate WebSocket protocol
+                ws_url = ws_url.replace("http://", "ws://").replace(
+                    "https://", "wss://"
+                )
+                return ws_url  # URL already contains correct protocol
+            else:
+                raise ValueError(
+                    "WebSocket URL must start with http://, https://, ws://, or wss://"
+                )
+        else:
+            # If ws_url is a simple hostname or hostname:port
+            return f"{protocol}://{ws_url}"
+
+    def set_verify_ssl(self, enabled: bool) -> None:
+        self.api.set_verify_ssl(enabled)
+        self.verify_ssl = self.api.ws.verify_ssl
+        logger.debug(
             f"SSL verification {'enabled' if self.api.ws.verify_ssl else 'disabled'}."
         )
 
@@ -62,7 +105,7 @@ class XOAManager:
         self.vm_management = VMManagement(self.api)
         self.storage_management = StorageManagement(self.api)
         self.host_management = HostManagement(self.api)
-        logger.info("Authenticated and ready to manage Xen Orchestra.")
+        logger.debug("Authenticated and ready to manage Xen Orchestra.")
 
     async def create_user(
         self, email: str, password: str, permission: str = "none"
@@ -133,7 +176,7 @@ class XOAManager:
 
 # Example usage
 async def main():
-    manager = XOAManager("http://localhost:80", verify_ssl=False)
+    manager = XOAManager("localhost", "http://localhost:80", verify_ssl=False)
     await manager.authenticate(username="admin", password="password")
     vms = await manager.list_all_vms()
     print(vms)

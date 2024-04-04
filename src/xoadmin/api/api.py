@@ -19,12 +19,13 @@ class XOAPI:
 
     def __init__(
         self,
-        base_url: str,
+        rest_base_url: str,
         ws_url: str = None,
         credentials: Dict[str, str] = None,
         verify_ssl: bool = True,
     ) -> None:
-        self.base_url = base_url
+        self.verify_ssl = verify_ssl
+        self.rest_base_url = rest_base_url
         self.session = httpx.AsyncClient(verify=verify_ssl, follow_redirects=True)
         self.auth_token = None
         # Initialize WebSocket connection for authentication
@@ -38,8 +39,9 @@ class XOAPI:
     def get_socket(self) -> XOSocket:
         return self.ws
 
-    def verify_ssl(self, enabled: bool):
+    def set_verify_ssl(self, enabled: bool):
         self.ws = XOSocket(url=self.ws_url, verify_ssl=enabled)
+        self.verify_ssl = self.ws.verify_ssl
 
     def set_credentials(self, username: str, password: str):
         self.credentials = {"email": str(username), "password": str(password)}
@@ -78,11 +80,11 @@ class XOAPI:
         await self.authenticate_with_websocket(
             self.credentials["email"], self.credentials["password"]
         )
-        logger.info("Authentication token refreshed.")
+        logger.debug("Authentication token refreshed.")
 
     async def _request(self, method: str, endpoint: str, **kwargs: Any) -> Any:
         # Prepare the URL
-        url = f"{self.base_url}/{endpoint}"
+        url = f"{self.rest_base_url}/{endpoint}"
         # Ensure cookies are correctly set for the session
         if self.auth_token:
             self.session.cookies.set("authenticationToken", self.auth_token)

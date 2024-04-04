@@ -1,10 +1,10 @@
 import json
 import ssl
-import websockets
 import uuid
 from typing import Dict
 from uuid import uuid4
 
+import websockets
 
 from xoadmin.api.error import AuthenticationError, ServerError, XOSocketError
 from xoadmin.utils import get_logger
@@ -60,10 +60,10 @@ class XOSocket:
             self.websocket = await websockets.connect(
                 self.url, ssl=ssl_context if self.url.startswith("wss://") else None
             )
-            logger.info("Connection opened.")
+            logger.debug("Connection opened.")
             if self.credentials:
                 await self.sign_in(self.credentials)
-                logger.info("Sign in successful.")
+                logger.debug("Sign in successful.")
         except Exception as e:
             logger.error(f"Error opening WebSocket connection: {e}")
             raise
@@ -75,7 +75,7 @@ class XOSocket:
         Closes the WebSocket connection.
         """
         await self.websocket.close()
-        logger.info("Connection closed.")
+        logger.debug("Connection closed.")
 
     async def call(self, method: str, params: dict = None):
         """
@@ -113,7 +113,7 @@ class XOSocket:
         response = await self.call("session.signIn", credentials)
         if "result" in response and "authenticationToken" in response["result"]:
             self.user = response["result"]
-            logger.info("Signed in as:", self.user)
+            logger.debug("Signed in as:", self.user)
         elif "error" in response:
             raise XOSocketError(f"Failed to sign in: {response['error']}")
 
@@ -131,7 +131,7 @@ class XOSocket:
         response = await self.call("token.create", params)
         if "result" in response:
             token_id = response["result"]
-            logger.info("Token created successfully")
+            logger.debug("Token created successfully")
             return token_id
         else:
             error_msg = response.get("error", {}).get("message", "Unknown error")

@@ -19,6 +19,7 @@ lib64/
 parts/
 sdist/
 var/
+data
 local.db
 data/**
 wheels/
