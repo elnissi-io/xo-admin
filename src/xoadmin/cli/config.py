@@ -58,8 +58,13 @@ def config_info(format_, sensitive):
 @click.option(
     "--env-var", help="Use a specific environment variable (overrides default)."
 )
-def config_set(key, value, from_env, env_var: Optional[str]):
-    config_model = load_xo_config()
+@click.option(
+    "-c", "--config-path", default=None, help="Use a specific configuration file."
+)
+def config_set(
+    key, value, from_env, env_var: Optional[str], config_path: Optional[str] = None
+):
+    config_model = load_xo_config(config_path=config_path)
     if from_env:
         env_key = env_var if env_var else ENV_VARIABLE_MAPPING.get(key)
         if not env_key:
@@ -73,7 +78,7 @@ def config_set(key, value, from_env, env_var: Optional[str]):
     try:
         key_path = ENV_VARIABLE_MAPPING.get("__prefix__") + key
         updated_config_model = update_config(config_model, key_path, value)
-        save_xo_config(updated_config_model)
+        save_xo_config(config=updated_config_model, config_path=config_path)
         click.echo(f"Updated configuration '{key}' with new value.")
     except ValueError as e:
         # click.echo(f"{traceback.format_exc()}", err=True)

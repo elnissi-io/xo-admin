@@ -24,6 +24,7 @@ class XOAPI:
         credentials: Dict[str, str] = None,
         verify_ssl: bool = True,
     ) -> None:
+        self.verify_ssl = verify_ssl
         self.rest_base_url = rest_base_url
         self.session = httpx.AsyncClient(verify=verify_ssl, follow_redirects=True)
         self.auth_token = None
@@ -38,8 +39,9 @@ class XOAPI:
     def get_socket(self) -> XOSocket:
         return self.ws
 
-    def verify_ssl(self, enabled: bool):
+    def set_verify_ssl(self, enabled: bool):
         self.ws = XOSocket(url=self.ws_url, verify_ssl=enabled)
+        self.verify_ssl = self.ws.verify_ssl
 
     def set_credentials(self, username: str, password: str):
         self.credentials = {"email": str(username), "password": str(password)}

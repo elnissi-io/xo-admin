@@ -1,3 +1,4 @@
+import time
 from unittest.mock import patch
 
 import pytest
@@ -30,34 +31,38 @@ async def test_authenticate_with_websocket(mocker):
 
 def test_sanitize_ws():
     # Test case when SSL verification is enabled (default)
-    manager = XOAManager("localhost", verify_ssl=True)
+    manager = XOAManager(host="localhost", verify_ssl=True)
     assert manager._sanitize_ws("localhost") == "wss://localhost"
 
     # Test case when SSL verification is disabled
-    manager = XOAManager("localhost", verify_ssl=False)
+    manager = XOAManager(host="localhost", verify_ssl=False)
     assert manager._sanitize_ws("localhost") == "ws://localhost"
 
     # Additional test case for HTTPS with default port (443)
-    manager = XOAManager("localhost", verify_ssl=True)
+    manager = XOAManager(host="localhost", verify_ssl=True)
     assert manager._sanitize_ws("localhost") == "wss://localhost"
 
     # Test case for HTTPS with non-default port
-    manager = XOAManager("localhost", verify_ssl=True)
+    manager = XOAManager(host="localhost", verify_ssl=True)
     assert manager._sanitize_ws("localhost:8443") == "wss://localhost:8443"
 
     # Test case for HTTP with non-default port
-    manager = XOAManager("localhost", verify_ssl=False)
+    manager = XOAManager(host="localhost", verify_ssl=False)
     assert manager._sanitize_ws("localhost:8080") == "ws://localhost:8080"
 
-    # Test case for invalid URL
+
+def test_sanitize_ws_invalid_url():
     with pytest.raises(ValueError):
-        manager._sanitize_ws("ftp://localhost:21")
+        manager = XOAManager(
+            host="localhost", ws_url="ftp://localhost", verify_ssl=False
+        )
+        print(f"Should not reach here {manager.ws_url}")
 
 
 @pytest.mark.asyncio
 async def test_verify_ssl(mocker):
     # Mock only the verify_ssl method to keep other parts of the __init__ intact.
-    mock_verify_ssl = mocker.patch.object(XOAPI, "verify_ssl")
+    mock_verify_ssl = mocker.patch.object(XOAPI, "set_verify_ssl")
     manager = XOAManager("http://test", verify_ssl=False)
     manager.api = XOAPI("http://test", "ws://test")
     manager.api.ws = mocker.Mock()  # Mock the ws attribute directly
@@ -71,7 +76,7 @@ async def test_authenticate_error_handling(mocker):
     mock_authenticate = mocker.patch.object(
         XOAPI, "authenticate_with_websocket", side_effect=AuthenticationError
     )
-    manager = XOAManager("http://test", verify_ssl=False)
+    manager = XOAManager(host="test", rest_base_url="http://test", verify_ssl=False)
     manager.api = XOAPI("http://test")
 
     with pytest.raises(AuthenticationError):
@@ -89,8 +94,8 @@ async def test_create_and_delete_user(mocker):
     )
     mocker.patch.object(UserManagement, "delete_user", return_value=True)
 
-    manager = XOAManager("http://test")
-    manager.user_management = UserManagement(XOAPI("http://test"))
+    manager = XOAManager(host="test", rest_base_url="http://test")
+    manager.user_management = UserManagement(XOAPI(rest_base_url="http://test"))
 
     # Test create user
     await manager.create_user("test@test.com", "password")

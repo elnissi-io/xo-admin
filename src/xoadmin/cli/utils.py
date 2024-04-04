@@ -21,8 +21,10 @@ async def get_authenticated_api() -> XOAPI:
     return api
 
 
-def load_xo_config(config_path=DEFAULT_CONFIG_PATH) -> XOAConfig:
+def load_xo_config(config_path=None) -> XOAConfig:
     """Load XO configuration using Pydantic, handling nested structure."""
+    if not config_path:
+        config_path = DEFAULT_CONFIG_PATH
     try:
         with open(config_path, "r") as f:
             config_data = yaml.safe_load(f)
@@ -32,9 +34,11 @@ def load_xo_config(config_path=DEFAULT_CONFIG_PATH) -> XOAConfig:
         raise FileNotFoundError(f"Could not load config file from {config_path}: {e}")
 
 
-def save_xo_config(config: XOAConfig, config_path=DEFAULT_CONFIG_PATH):
+def save_xo_config(config: XOAConfig, config_path=None):
     """Save XO configuration using Pydantic, ensuring SecretStr fields are serialized correctly."""
-    config_data = config.dict(by_alias=True, exclude_unset=True)
+    if not config_path:
+        config_path = DEFAULT_CONFIG_PATH
+    config_data = config.model_dump(by_alias=True, exclude_unset=True)
 
     # Manually process SecretStr to ensure it's saved as plain string
     def serialize_secretstr(obj):
@@ -77,7 +81,7 @@ def get_field_type(model: BaseModel, field_name: str):
     Get the Python type of a model field in Pydantic V2.
     """
     # Accessing the field from the model schema
-    field_schema = model.schema()["properties"].get(field_name)
+    field_schema = model.model_json_schema()["properties"].get(field_name)
 
     if not field_schema:
         raise ValueError(f"Field '{field_name}' does not exist in the model schema.")

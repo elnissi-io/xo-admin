@@ -26,19 +26,18 @@ class XOAManager:
         verify_ssl: bool = True,
     ):
         self.host = host
-        self.rest_base_url = self._sanitize_rest_base_url(
-            rest_base_url, host, verify_ssl
+        self.verify_ssl = verify_ssl
+        self.rest_base_url = self._sanitize_rest_base_url(rest_base_url, host)
+        self.ws_url = self._sanitize_ws(ws_url)
+        self.api = XOAPI(
+            self.rest_base_url, ws_url=self.ws_url, verify_ssl=self.verify_ssl
         )
-        self.ws_url = self._sanitize_ws(ws_url, verify_ssl)
-        self.api = XOAPI(self.rest_base_url, ws_url=self.ws_url, verify_ssl=verify_ssl)
         # The management classes will be initialized after authentication
         self.user_management = None
         self.vm_management = None
         self.storage_management = None
 
-    def _sanitize_rest_base_url(
-        self, rest_base_url: str, host: str, verify_ssl: bool
-    ) -> str:
+    def _sanitize_rest_base_url(self, rest_base_url: str, host: str) -> str:
         """
         Sanitizes the REST base URL, ensuring it includes the protocol and default port.
 
@@ -51,38 +50,45 @@ class XOAManager:
             str: The sanitized REST base URL.
         """
         if not rest_base_url:
-            protocol = "https" if verify_ssl else "http"
+            protocol = "https" if self.verify_ssl else "http"
             return f"{protocol}://{host}"
         elif rest_base_url.startswith(("http://", "https://")):
             return rest_base_url
         else:
             raise ValueError("URL must start with http:// or https://")
 
-    def _sanitize_ws(self, ws_url: str, verify_ssl: bool) -> str:
+    def _sanitize_ws(self, ws_url: str) -> str:
         """
         Sanitizes the WebSocket URL, ensuring it follows the correct format.
 
         Parameters:
-            ws_url (str): The WebSocket URL.
-            verify_ssl (bool): Whether to verify SSL certificates.
+            ws_url (str): The WebSocket URL or hostname.
 
         Returns:
             str: The sanitized WebSocket URL.
         """
-        if ws_url:
-            if ws_url.startswith(("http://", "https://")):
-                protocol = "wss" if verify_ssl else "ws"
-                return ws_url.replace("http://", f"{protocol}://").replace(
-                    "https://", f"{protocol}://"
-                )
-            else:
-                raise ValueError("WebSocket URL must start with http:// or https://")
-        else:
-            protocol = "wss" if verify_ssl else "ws"
+        protocol = "wss" if self.verify_ssl else "ws"
+        if not ws_url:
             return f"{protocol}://{self.host}"
 
+        if "://" in ws_url:
+            if ws_url.startswith(("ws://", "wss://", "http://", "https://")):
+                # Replace http/https with appropriate WebSocket protocol
+                ws_url = ws_url.replace("http://", "ws://").replace(
+                    "https://", "wss://"
+                )
+                return ws_url  # URL already contains correct protocol
+            else:
+                raise ValueError(
+                    "WebSocket URL must start with http://, https://, ws://, or wss://"
+                )
+        else:
+            # If ws_url is a simple hostname or hostname:port
+            return f"{protocol}://{ws_url}"
+
     def set_verify_ssl(self, enabled: bool) -> None:
-        self.api.verify_ssl(enabled)
+        self.api.set_verify_ssl(enabled)
+        self.verify_ssl = self.api.ws.verify_ssl
         logger.info(
             f"SSL verification {'enabled' if self.api.ws.verify_ssl else 'disabled'}."
         )
