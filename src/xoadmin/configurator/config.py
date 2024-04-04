@@ -16,7 +16,7 @@ class HypervisorConfig(BaseModel):
 class XOAInstance(BaseModel):
     host: str
     rest_api: Optional[str] = None
-    ws_url: Optional[str] = None
+    websocket: Optional[str] = None
     username: str
     password: str
 

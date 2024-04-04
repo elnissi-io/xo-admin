@@ -1,3 +1,5 @@
+from typing import Optional
+
 import click
 
 from xoadmin.api.user import UserManagement
@@ -10,10 +12,13 @@ def user_commands():
     pass
 
 
+@click.option(
+    "-c", "--config-path", default=None, help="Use a specific configuration file."
+)
 @user_commands.command(name="list")
-async def list_users():
+async def list_users(config_path: Optional[str] = None):
     """List all users."""
-    api = await get_authenticated_api()
+    api = await get_authenticated_api(config_path)
     user_management = UserManagement(api)
     users = await user_management.list_users()
     for user in users:
@@ -24,9 +29,12 @@ async def list_users():
 @click.argument("email")
 @click.argument("password")
 @click.option("--permission", default="none", help="User permission level.")
-async def create_user(email, password, permission):
+@click.option(
+    "-c", "--config-path", default=None, help="Use a specific configuration file."
+)
+async def create_user(email, password, permission, config_path: Optional[str] = None):
     """Create a new user."""
-    api = await get_authenticated_api()
+    api = await get_authenticated_api(config_path)
     user_management = UserManagement(api)
     await user_management.create_user(email, password, permission)
     click.echo(f"Created user {email} with permission {permission}.")
@@ -34,9 +42,12 @@ async def create_user(email, password, permission):
 
 @user_commands.command(name="delete")
 @click.argument("email")
-async def delete_user(email):
+@click.option(
+    "-c", "--config-path", default=None, help="Use a specific configuration file."
+)
+async def delete_user(email, config_path: Optional[str] = None):
     """Delete a user."""
-    api = await get_authenticated_api()
+    api = await get_authenticated_api(config_path)
     user_management = UserManagement(api)
     result = await user_management.delete_user(email)
     if result:

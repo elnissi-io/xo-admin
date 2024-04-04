@@ -17,6 +17,7 @@ class XOAConfigurator:
         xoa_manager = XOAManager(
             self.app_config.xoa.host,
             self.app_config.xoa.rest_api,
+            self.app_config.xoa.websocket,
             verify_ssl=False,
         )
         await xoa_manager.authenticate(

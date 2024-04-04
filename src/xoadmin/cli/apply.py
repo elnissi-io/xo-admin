@@ -12,8 +12,8 @@ from xoadmin.configurator.configurator import XOAConfigurator
     help="Path to the configuration file.",
 )
 @click.pass_context
-async def apply_config(ctx, config):
+async def apply_config(ctx, file):
     """Apply configuration to Xen Orchestra instances."""
-    configurator = XOAConfigurator(config)
+    configurator = XOAConfigurator(file)
     await configurator.load_and_apply_configuration()
     click.echo("Configuration applied successfully.")

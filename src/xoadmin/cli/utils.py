@@ -8,17 +8,45 @@ import yaml
 from pydantic import BaseModel, SecretStr, ValidationError, parse_obj_as
 
 from xoadmin.api.api import XOAPI
+from xoadmin.api.manager import XOAManager
 from xoadmin.cli.model import XOAConfig
 
 DEFAULT_CONFIG_PATH = os.path.join(Path.home(), ".xoadmin/config")
 
 
-async def get_authenticated_api() -> XOAPI:
+async def get_authenticated_api(
+    config_path: str = None, username: str = None, password: str = None
+) -> XOAPI:
     """Get an authenticated XOAPI instance."""
-    config = load_xo_config()
-    api = XOAPI(rest_base_url=config.xoa.host, verify_ssl=False)
-    await api.authenticate_with_websocket(config.xoa.username, config.xoa.password)
+    config = load_xo_config(config_path)
+    api = XOAPI(
+        rest_base_url=config.xoa.rest_api,
+        ws_url=config.xoa.websocket,
+        verify_ssl=config.xoa.verify_ssl,
+    )
+    await api.authenticate_with_websocket(
+        username if username else config.xoa.username,
+        password if password else config.xoa.password.get_secret_value(),
+    )
     return api
+
+
+async def get_authenticated_manager(
+    config_path: str = None, username: str = None, password: str = None
+) -> XOAManager:
+    """Get an authenticated XOAPI instance."""
+    config = load_xo_config(config_path)
+    manager = XOAManager(
+        host=config.xoa.host,
+        rest_base_url=config.xoa.rest_api,
+        ws_url=config.xoa.websocket,
+        verify_ssl=config.xoa.verify_ssl,
+    )
+    await manager.authenticate(
+        username if username else config.xoa.username,
+        password if password else config.xoa.password.get_secret_value(),
+    )
+    return manager
 
 
 def load_xo_config(config_path=None) -> XOAConfig:
