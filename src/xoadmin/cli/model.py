@@ -23,22 +23,26 @@ class XOASettings:
     }
 
     @staticmethod
+    def get_env_var_name(key: str) -> Optional[str]:
+        """Return the environment variable name for a given key."""
+        name = getattr(XOASettings, key, None)
+        return name
+
+    @staticmethod
     def get(key: str) -> Optional[str]:
-        return getattr(XOASettings, key, None)
+        """Return the value of the environment variable for a given key."""
+        env_var_name = XOASettings.get_env_var_name(key)
+        if env_var_name:
+            return os.getenv(env_var_name)
+        return None
 
     @staticmethod
-    def get_env_key(key: str) -> Optional[str]:
-        return os.getenv(getattr(XOASettings, key, None))
-
-    @staticmethod
-    def get_key(env_key: str) -> str:
-        """
-        Get the key corresponding to the given environment variable.
-        """
-        for key, value in XOASettings.__annotations__.items():
-            if value == env_key:
+    def get_key_for_env_var(env_var_name: str) -> Optional[str]:
+        """Return the key in XOASettings corresponding to a given environment variable name."""
+        for key, value in XOASettings.__dict__.items():
+            if value == env_var_name and not key.startswith("__"):
                 return key
-        raise KeyError(f"No key found for environment variable: {env_key}")
+        return None
 
 
 class XOA(BaseModel):

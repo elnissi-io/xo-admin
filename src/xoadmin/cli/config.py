@@ -3,7 +3,6 @@ import os
 from typing import Optional
 
 import click
-import yaml
 
 from xoadmin.cli.model import XOA, XOAConfig, XOASettings
 from xoadmin.cli.options import output_format
@@ -31,7 +30,7 @@ def config_info(sensitive, format_):
     """Display the current configuration."""
     config_model = load_xo_config()
     # Convert Pydantic model to dict, automatically handling SecretStr serialization
-    config_dict = config_model.dict()
+    config_dict = config_model.model_dump()
     # Optionally mask sensitive data
     config_dict = mask_sensitive(config_dict, show_sensitive=sensitive)
 
@@ -79,21 +78,29 @@ def config_set(
 @click.option(
     "-o",
     "--output",
+    default=None,
     type=click.Path(),
     help="Output file path for the generated configuration.",
 )
-def generate_config(output):
+@output_format
+def generate_config(output: str, format_: str):
     """
-    Generate XOA configuration based on environment variables and save it to the specified output file.
+    Generate XOA configuration based on environment variables and save it to the specified output file or print it in a specified format. Also, print a list of environment variables that were found and not found.
     """
-    # Collect configuration values from environment variables
     xoa_values = {}
-    for key in dir(XOASettings):
-        if not key.startswith("__") and key != "defaults":
-            env_var = getattr(XOASettings, key)
-            value = os.getenv(env_var)
+    found_env_vars = []
+    not_found_env_vars = []
+
+    # Iterate over environment variable names defined in XOASettings
+    for attr in XOASettings.__annotations__.keys():
+        env_var_name = XOASettings.get_env_var_name(attr)
+        if env_var_name:
+            value = os.getenv(env_var_name)
             if value is not None:
-                xoa_values[key] = value
+                xoa_values[attr] = value
+                found_env_vars.append(env_var_name)
+            else:
+                not_found_env_vars.append(env_var_name)
 
     # Add defaults for missing fields
     for key, default_value in XOASettings.defaults.items():
@@ -101,13 +108,26 @@ def generate_config(output):
 
     # Create XOA model instance
     xoa = XOA(**xoa_values)
-
-    # Create XOAConfig model instance
     xoa_config = XOAConfig(xoa=xoa)
 
-    # Save the configuration to the specified output file
     if output:
+        # Save the configuration to the specified output file
         save_xo_config(config=xoa_config, config_path=output)
         click.echo(f"XOA configuration generated and saved to {output}.")
     else:
-        click.echo("No output file specified. Configuration not saved.")
+        # Print the configuration in the CLI in the specified format
+        config_dict = mask_sensitive(xoa_config.model_dump(), show_sensitive=True)
+        click.echo(render(config_dict, format_))
+
+    # Print found and not found environment variables
+    if found_env_vars:
+        click.echo("# Found environment variables:")
+        for var in found_env_vars:
+            click.echo(f"# - {var}")
+    else:
+        click.echo("# No environment variables were found.")
+
+    if not_found_env_vars:
+        click.echo("# Environment variables not defined (using defaults):")
+        for var in not_found_env_vars:
+            click.echo(f"# - {var}")
