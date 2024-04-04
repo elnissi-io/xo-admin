@@ -114,7 +114,7 @@ The XO Admin Library provides a Command Line Interface (CLI) to simplify interac
 3. **Performing Operations:** You can now perform various operations using the CLI.
 
     The cli utilizes a config file under ~/.xoadmin/config
-    ```
+    ```yaml
     xoa:
       host: localhost
       ws_url: ws://localhost
@@ -141,7 +141,7 @@ xoadmin allows you to quickly add hosts and users to an XOA instance using a YAM
 
 1. Create a YAML file with your desired configuration settings. For example:
 
-    ```
+    ```yaml
     hypervisors:
       - host: 192.168.0.1
         username: root
@@ -164,7 +164,7 @@ xoadmin allows you to quickly add hosts and users to an XOA instance using a YAM
 
 You can also integrate the XO Admin Library directly into your Python scripts for more customized usage. Here's an example of how you can do this:
 
-```
+```python
 import asyncio
 from xoadmin.api.manager import XOAManager
 
@@ -188,7 +188,7 @@ async def main():
     await manager.close()
 ```
 
-```
+```python
 import asyncio
 from xoadmin.api.api import XOAPI
 
