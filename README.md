@@ -9,12 +9,12 @@ xoadmin is an asynchronous Python client for interacting with Xen Orchestra's RE
 
 ## Installation
 
-To use the XO Admin Library, ensure you have Python 3.7+ installed. This library depends on `httpx` and `websockets` for asynchronous HTTP and WebSocket communication, respectively.
+To use the XO Admin Library, ensure you have Python 3.9+ installed.
 
 1. Clone this repository.
-2. Install the package
+2. Install the package:
 
-```sh
+```
 pip install .
 ```
 
@@ -22,28 +22,28 @@ pip install .
 
 1. Initialize the `XOAManager` with the base URL of your Xen Orchestra instance:
 
-```python
+```
 from xoadmin.manager import XOAManager
 
-manager = XOAManager("http://your-xo-instance.com", verify_ssl=False)
+manager = XOAManager(host="your-xo-instance-host", verify_ssl=False)
 ```
 
 2. Authenticate using your Xen Orchestra credentials:
 
-```python
+```
 await manager.authenticate(username="your-username", password="your-password")
 ```
 
-3. Now, you can perform various operations, such as listing all VMs:
+3. Now, you can perform various operations through the manager:
 
-```python
+```
 vms = await manager.list_all_vms()
 print(vms)
 ```
 
 Ensure you run your script in an environment that supports asynchronous execution, like:
 
-```python
+```
 import asyncio
 
 asyncio.run(main())
@@ -53,10 +53,136 @@ asyncio.run(main())
 
 For more detailed information on available methods and their usage, refer to the source code in the `src/xoadmin` directory. Each module (`vm.py`, `user.py`, `storage.py`) contains classes with methods corresponding to the Xen Orchestra functionalities they manage.
 
-## Contributing
+## Command Line Interface (CLI)
 
-Contributions to the XO Admin Library are welcome! Please feel free to submit pull requests or open issues to discuss new features or improvements.
+```
+Usage: xoadmin [OPTIONS] COMMAND [ARGS]...
 
-## License
+  XOA Admin CLI tool for managing Xen Orchestra instances.
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  apply    Apply configuration to Xen Orchestra instances.
+  auth     Authentication management commands.
+  config   Configuration management commands.
+  host     Manage hosts.
+  storage  Storage management commands.
+  user     Manage users.
+  vm       VM management commands.
+```
+
+The XO Admin Library provides a Command Line Interface (CLI) to simplify interaction with Xen Orchestra. Here's how you can use it:
+
+1. **Installation:** After cloning the repository, install the package using pip:
+
+    ```
+    pip install .
+    ```
+
+2. **Authentication:** Initialize the `XOAManager` with the base URL of your Xen Orchestra instance and authenticate using your credentials:
+
+    ```
+    xoadmin authenticate --host your-xo-instance-host --username your-username --password your-password
+    ```
+
+3. **Performing Operations:** You can now perform various operations using the CLI.
+
+    The cli utilizes a config file under ~/.xoadmin/config
+    ```
+    xoa:
+      host: localhost
+      ws_url: ws://localhost
+      rest_api: http://localhost:80
+      verify_ssl: false
+      password: admin
+      username: admin@admin.net
+    ```
+    ```
+    xoadmin vm list
+    ```
+    ```
+    xoadmin config generate
+    ```
+
+## Applying a Configuration
+
+xoadmin allows you to quickly add hosts and users to an XOA instance (completely separate from the ~/.xoadmin/config host) using a YAML file. Here's how to do it:
+
+1. Create a YAML file with your desired configuration settings. For example:
+
+    ```
+    xoa:
+      host: localhost
+      websocket: ws://localhost
+      rest_api: http://localhost:80
+      username: admin@admin.net
+      password: admin
+
+    hypervisors:
+      - host: 192.168.0.1
+        username: root
+        password: password
+        allowUnauthorized: true
+
+    users:
+      - username: user
+        password: password
+        permission: admin
+    ```
+
+2. Apply the configuration using the `apply` command:
+
+    ```
+    xoadmin apply -f config.yaml
+    ```
+
+## Python Package Usage
+
+You can also integrate the XO Admin Library directly into your Python scripts for more customized usage. Here's an example of how you can do this:
+
+```
+import asyncio
+from xoadmin.api.manager import XOAManager
+
+async def main():
+    # Initialize XOAManager
+    manager = XOAManager(
+        host="localhost",
+        rest_api="http://localhost:80",
+        websocket="ws://localhost",
+        verify_ssl=False
+    )
+    
+    # Authenticate
+    await manager.authenticate(username="admin@admin.net", password="admin")
+
+    # Perform operations
+    vms = await manager.list_all_vms()
+    print(vms)
+
+    # Close session
+    await manager.close()
+```
+
+```
+import asyncio
+from xoadmin.api.api import XOAPI
+
+async def main():
+    api = XOAPI(
+                rest_base_url="http://localhost:80", # without /rest
+                ws_url="ws://localhost",
+                verify_ssl=True,
+            )
+
+    await api.authenticate_with_websocket(
+        "admin@admin.net",
+        "admin",
+    )
+```
+
+## Contributing and License
+
+Contributions to the XO Admin Library are welcome! Please feel free to submit pull requests or open issues to discuss new features or improvements. This project is licensed under the Apache 2.0 License. For more details, refer to the [LICENSE](LICENSE) file.
