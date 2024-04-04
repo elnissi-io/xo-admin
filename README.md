@@ -11,39 +11,44 @@ xoadmin is an asynchronous Python client for interacting with Xen Orchestra's RE
 
 To use the XO Admin Library, ensure you have Python 3.9+ installed.
 
-1. Clone this repository.
-2. Install the package:
+1. **From Source:** Clone and install the package from source
 
-```
+```bash
+git clone https://github.com/elnissi-io/xoadmin.git
 pip install .
+```
+
+2. **From pip:** Simple pip install
+```bash
+pip install xoadmin
 ```
 
 ## Quick Start
 
 1. Initialize the `XOAManager` with the base URL of your Xen Orchestra instance:
 
-```
-from xoadmin.manager import XOAManager
+```python
+from xoadmin.api.manager import XOAManager
 
 manager = XOAManager(host="your-xo-instance-host", verify_ssl=False)
 ```
 
 2. Authenticate using your Xen Orchestra credentials:
 
-```
+```python
 await manager.authenticate(username="your-username", password="your-password")
 ```
 
 3. Now, you can perform various operations through the manager:
 
-```
+```python
 vms = await manager.list_all_vms()
 print(vms)
 ```
 
 Ensure you run your script in an environment that supports asynchronous execution, like:
 
-```
+```python
 import asyncio
 
 asyncio.run(main())
@@ -51,11 +56,13 @@ asyncio.run(main())
 
 ## Documentation
 
+Currently a work in progress.
+
 For more detailed information on available methods and their usage, refer to the source code in the `src/xoadmin` directory. Each module (`vm.py`, `user.py`, `storage.py`) contains classes with methods corresponding to the Xen Orchestra functionalities they manage.
 
 ## Command Line Interface (CLI)
 
-```
+```bash
 Usage: xoadmin [OPTIONS] COMMAND [ARGS]...
 
   XOA Admin CLI tool for managing Xen Orchestra instances.
@@ -75,16 +82,33 @@ Commands:
 
 The XO Admin Library provides a Command Line Interface (CLI) to simplify interaction with Xen Orchestra. Here's how you can use it:
 
-1. **Installation:** After cloning the repository, install the package using pip:
-
-    ```
-    pip install .
-    ```
+1. **Installation:** Install either from source or using pip:
 
 2. **Authentication:** Initialize the `XOAManager` with the base URL of your Xen Orchestra instance and authenticate using your credentials:
 
+    In a container environment for instance:
+    ```bash
+    xoadmin config generate
     ```
-    xoadmin authenticate --host your-xo-instance-host --username your-username --password your-password
+    This will display a copyable config file you could manually create  in `~/.xoadmin/config`.
+
+    Alternatively, you could tell it to write it to a file using `--output <filepath>`
+    ```bash
+    xoadmin config generate --output ~/.xoadmin/config
+    ```
+
+    `xoadmin config generate` will tell you which environment variables were not defined, you could then manually define the values needed under the config file
+    ```terminal
+    ➜ xoadmin git:(main) ✗ xoadmin config generate -o test.yml
+    XOA configuration generated and saved to test.yml.
+    # No environment variables were found.
+    # Environment variables not defined (using defaults):
+    # - XOA_HOST
+    # - XOA_REST_API
+    # - XOA_WEBSOCKET
+    # - XOA_USERNAME
+    # - XOA_PASSWORD
+    # - XOA_VERIFY_SSL
     ```
 
 3. **Performing Operations:** You can now perform various operations using the CLI.
@@ -99,13 +123,18 @@ The XO Admin Library provides a Command Line Interface (CLI) to simplify interac
       password: admin
       username: admin@admin.net
     ```
+    List vms
     ```
     xoadmin vm list
     ```
+    List users
     ```
-    xoadmin config generate
+    xoadmin user list
     ```
-
+    List hosts
+    ```
+    xoadmin host list
+    ```
 ## Applying a Configuration
 
 xoadmin allows you to quickly add hosts and users to an XOA instance (completely separate from the ~/.xoadmin/config host) using a YAML file. Here's how to do it:
@@ -138,7 +167,7 @@ xoadmin allows you to quickly add hosts and users to an XOA instance (completely
     xoadmin apply -f config.yaml
     ```
 
-## Python Package Usage
+## Module Usage
 
 You can also integrate the XO Admin Library directly into your Python scripts for more customized usage. Here's an example of how you can do this:
 
