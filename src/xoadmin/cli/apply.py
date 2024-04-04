@@ -19,6 +19,9 @@ async def apply_config(file, config_path):
     """Apply configuration to Xen Orchestra instances."""
     xoa_manager = await get_authenticated_manager(config_path=config_path)
     configurator = XOAConfigurator(xoa_manager=xoa_manager)
-    configurator.load(file)
-    await configurator.apply()
-    click.echo("Configuration applied successfully.")
+    try:
+        configurator.load(file)
+        await configurator.apply()
+        click.echo("Configuration applied successfully.")
+    except Exception as e:
+        click.echo(f"Error during configuration application: {e}", err=True)
