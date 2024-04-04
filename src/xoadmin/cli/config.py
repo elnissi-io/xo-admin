@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from typing import Optional
 
 import click
@@ -8,7 +9,6 @@ from pydantic import SecretStr
 
 from xoadmin.cli.model import ENV_VARIABLE_MAPPING, XOAConfig
 from xoadmin.cli.utils import (
-    coro,
     load_xo_config,
     mask_sensitive,
     save_xo_config,
@@ -60,7 +60,6 @@ def config_info(format_, sensitive):
 )
 def config_set(key, value, from_env, env_var: Optional[str]):
     config_model = load_xo_config()
-
     if from_env:
         env_key = env_var if env_var else ENV_VARIABLE_MAPPING.get(key)
         if not env_key:
@@ -71,10 +70,11 @@ def config_set(key, value, from_env, env_var: Optional[str]):
         if value is None:
             click.echo(f"Environment variable {env_key} is not set.", err=True)
             return
-
-    # Create a new config with the updated settings
-    updated_config_model = update_config(config_model, key, value)
-
-    # Save the updated model back to the config file
-    save_xo_config(updated_config_model)
-    click.echo(f"Updated configuration '{key}' with new value.")
+    try:
+        key_path = ENV_VARIABLE_MAPPING.get("__prefix__") + key
+        updated_config_model = update_config(config_model, key_path, value)
+        save_xo_config(updated_config_model)
+        click.echo(f"Updated configuration '{key}' with new value.")
+    except ValueError as e:
+        # click.echo(f"{traceback.format_exc()}", err=True)
+        click.echo(f"Error updating configuration: {e}", err=True)

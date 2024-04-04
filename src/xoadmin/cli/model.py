@@ -1,23 +1,30 @@
-from pydantic import BaseModel, Field, SecretStr
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 ENV_VARIABLE_MAPPING = {
+    "__prefix__": "xoa.",
     "host": "XOA_HOST",
+    "rest_api": "XOA_REST_API",
+    "websocket": "XOA_WEBSOCKET",
     "username": "XOA_USERNAME",
     "password": "XOA_PASSWORD",
+    "verify_ssl": "XOA_VERIFY_SSL",
 }
 
 
 class XOA(BaseModel):
-    host: str = Field(..., alias="host", env="XOA_HOST")
-    username: str = Field(..., alias="username", env="XOA_USERNAME")
-    password: SecretStr = Field(..., alias="password", env="XOA_PASSWORD")
+    host: str
+    websocket: Optional[str] = None
+    rest_api: Optional[str] = None
+    username: str
+    password: SecretStr
+    verify_ssl: bool = True
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class XOAConfig(BaseModel):
     xoa: XOA
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
