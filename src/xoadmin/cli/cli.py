@@ -14,7 +14,10 @@ from xoadmin.cli.vms import vm_commands
 # Coroutine wrapper for command callbacks
 def coro(f):
     def wrapper(*args, **kwargs):
-        return asyncio.run(f(*args, **kwargs))
+        if asyncio.iscoroutinefunction(f):
+            return asyncio.run(f(*args, **kwargs))
+        else:
+            return f(*args, **kwargs)
 
     return wrapper
 

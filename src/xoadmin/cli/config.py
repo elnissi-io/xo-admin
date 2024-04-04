@@ -1,13 +1,11 @@
 import json
 import os
-import traceback
 from typing import Optional
 
 import click
 import yaml
-from pydantic import SecretStr
 
-from xoadmin.cli.model import ENV_VARIABLE_MAPPING, XOAConfig
+from xoadmin.cli.model import XOA, XOAConfig, XOASettings
 from xoadmin.cli.utils import (
     load_xo_config,
     mask_sensitive,
@@ -66,7 +64,7 @@ def config_set(
 ):
     config_model = load_xo_config(config_path=config_path)
     if from_env:
-        env_key = env_var if env_var else ENV_VARIABLE_MAPPING.get(key)
+        env_key = env_var if env_var else getattr(XOASettings, key)
         if not env_key:
             click.echo(f"No environment variable mapping found for {key}.", err=True)
             return
@@ -76,10 +74,48 @@ def config_set(
             click.echo(f"Environment variable {env_key} is not set.", err=True)
             return
     try:
-        key_path = ENV_VARIABLE_MAPPING.get("__prefix__") + key
+        key_path = XOASettings.__prefix__ + key
         updated_config_model = update_config(config_model, key_path, value)
         save_xo_config(config=updated_config_model, config_path=config_path)
         click.echo(f"Updated configuration '{key}' with new value.")
     except ValueError as e:
         # click.echo(f"{traceback.format_exc()}", err=True)
         click.echo(f"Error updating configuration: {e}", err=True)
+
+
+@config_commands.command(name="generate")
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(),
+    help="Output file path for the generated configuration.",
+)
+def generate_config(output):
+    """
+    Generate XOA configuration based on environment variables and save it to the specified output file.
+    """
+    # Collect configuration values from environment variables
+    xoa_values = {}
+    for key in dir(XOASettings):
+        if not key.startswith("__") and key != "defaults":
+            env_var = getattr(XOASettings, key)
+            value = os.getenv(env_var)
+            if value is not None:
+                xoa_values[key] = value
+
+    # Add defaults for missing fields
+    for key, default_value in XOASettings.defaults.items():
+        xoa_values.setdefault(key, default_value)
+
+    # Create XOA model instance
+    xoa = XOA(**xoa_values)
+
+    # Create XOAConfig model instance
+    xoa_config = XOAConfig(xoa=xoa)
+
+    # Save the configuration to the specified output file
+    if output:
+        save_xo_config(config=xoa_config, config_path=output)
+        click.echo(f"XOA configuration generated and saved to {output}.")
+    else:
+        click.echo("No output file specified. Configuration not saved.")

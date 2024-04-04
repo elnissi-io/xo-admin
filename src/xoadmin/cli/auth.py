@@ -3,8 +3,8 @@ from typing import Optional
 
 import click
 
-from xoadmin.cli.model import ENV_VARIABLE_MAPPING
-from xoadmin.cli.utils import get_authenticated_manager, load_xo_config
+from xoadmin.cli.model import XOASettings
+from xoadmin.cli.utils import get_authenticated_manager
 
 
 @click.group(name="auth")
@@ -40,17 +40,16 @@ async def auth_test(
     env_var_password: Optional[str],
     config_path: Optional[str] = None,
 ):
-    config_model = load_xo_config(config_path=config_path)
     if from_env:
         env_username = (
             env_var_username
             if env_var_username
-            else ENV_VARIABLE_MAPPING.get("username")
+            else XOASettings.get_env_key("username")
         )
         env_password = (
             env_var_password
             if env_var_password
-            else ENV_VARIABLE_MAPPING.get("password")
+            else XOASettings.get_env_key("password")
         )
         if not env_username or not env_password:
             click.echo(
@@ -58,7 +57,7 @@ async def auth_test(
                 err=True,
             )
             return
-
+        # attempt to use from env
         username = os.getenv(env_username)
         password = os.getenv(env_password)
         if username is None or password is None:
@@ -67,6 +66,7 @@ async def auth_test(
                 err=True,
             )
             return
+
     try:
         manager = await get_authenticated_manager(
             config_path=config_path, username=username, password=password
