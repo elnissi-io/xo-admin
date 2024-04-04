@@ -14,11 +14,11 @@ class XOASettings:
     verify_ssl: str = "XOA_VERIFY_SSL"
 
     defaults = {
-        "host": "default_host",
-        "websocket": "default_websocket",
-        "rest_api": "default_rest_api",
-        "username": "default_username",
-        "password": "default_password",
+        "host": "localhost",
+        "websocket": "ws://localhost",
+        "rest_api": "http://localhost:80",
+        "username": "admin@admin.net",
+        "password": "admin",
         "verify_ssl": False,
     }
 
