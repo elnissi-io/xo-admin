@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 from copy import deepcopy
 from pathlib import Path
@@ -133,6 +134,16 @@ def mask_sensitive(data, show_sensitive=False):
     elif isinstance(data, SecretStr) and show_sensitive:
         return data.get_secret_value()
     return data
+
+
+def render(data: Any, format_: str = "yaml") -> str:
+    """Render data in YAML or JSON format."""
+    if format_.lower() == "json":
+        return json.dumps(data, indent=2)
+    elif format_.lower() == "yaml":
+        return yaml.dump(data, default_flow_style=False)
+    else:
+        raise ValueError("Invalid format. Choose 'yaml' or 'json'.")
 
 
 def update_config(config_model: XOAConfig, key_path: str, value: str) -> BaseModel:

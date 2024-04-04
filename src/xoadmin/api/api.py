@@ -80,7 +80,7 @@ class XOAPI:
         await self.authenticate_with_websocket(
             self.credentials["email"], self.credentials["password"]
         )
-        logger.info("Authentication token refreshed.")
+        logger.debug("Authentication token refreshed.")
 
     async def _request(self, method: str, endpoint: str, **kwargs: Any) -> Any:
         # Prepare the URL
@@ -103,8 +103,8 @@ class XOAPI:
             response = await self.session.request(method, url, **kwargs)
 
         # Check for successful response
-        await response.raise_for_status()
-        return await response.json()
+        response.raise_for_status()
+        return response.json()
 
     async def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return await self._request("GET", endpoint, params=params)

@@ -6,9 +6,11 @@ import click
 import yaml
 
 from xoadmin.cli.model import XOA, XOAConfig, XOASettings
+from xoadmin.cli.options import output_format
 from xoadmin.cli.utils import (
     load_xo_config,
     mask_sensitive,
+    render,
     save_xo_config,
     update_config,
 )
@@ -22,16 +24,10 @@ def config_commands():
 
 @config_commands.command(name="info")
 @click.option(
-    "--format",
-    "format_",
-    type=click.Choice(["yaml", "json"], case_sensitive=False),
-    default="yaml",
-    help="Output format.",
-)
-@click.option(
     "--sensitive", is_flag=True, default=False, help="Display sensitive information."
 )
-def config_info(format_, sensitive):
+@output_format
+def config_info(sensitive, format_):
     """Display the current configuration."""
     config_model = load_xo_config()
     # Convert Pydantic model to dict, automatically handling SecretStr serialization
@@ -39,12 +35,7 @@ def config_info(format_, sensitive):
     # Optionally mask sensitive data
     config_dict = mask_sensitive(config_dict, show_sensitive=sensitive)
 
-    formatted_output = (
-        yaml.dump(config_dict, default_flow_style=False)
-        if format_ == "yaml"
-        else json.dumps(config_dict, indent=4)
-    )
-    click.echo(formatted_output)
+    click.echo(render(config_dict, format_))
 
 
 @config_commands.command(name="set")
@@ -62,6 +53,7 @@ def config_info(format_, sensitive):
 def config_set(
     key, value, from_env, env_var: Optional[str], config_path: Optional[str] = None
 ):
+    """Sets a value in the config file."""
     config_model = load_xo_config(config_path=config_path)
     if from_env:
         env_key = env_var if env_var else getattr(XOASettings, key)

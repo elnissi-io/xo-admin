@@ -38,3 +38,30 @@ class HostManagement:
         result = await socket.call("server.add", params)
         await socket.close()
         return result
+
+    async def list_hosts(self):
+        """
+        Retrieves a list of all registered Xen servers.
+
+        :return: A list of dictionaries containing host information.
+        """
+        # Ensure you're opening and closing the WebSocket connection appropriately.
+        socket = self.xo_api.get_socket()
+        await socket.open()
+        result = await socket.call("server.getAll", {})  # Empty params for all hosts
+        await socket.close()
+        return result
+
+    async def delete_host(self, host_id: str):
+        """
+        Deletes a Xen server by its ID.
+
+        :param host_id: The ID of the host to be deleted.
+        """
+        # Ensure you're opening and closing the WebSocket connection appropriately.
+        socket = self.xo_api.get_socket()
+        await socket.open()
+        params = {"id": host_id}
+        result = await socket.call("server.remove", params)
+        await socket.close()
+        return result

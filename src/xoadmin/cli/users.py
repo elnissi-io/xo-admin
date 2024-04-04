@@ -3,7 +3,8 @@ from typing import Optional
 import click
 
 from xoadmin.api.user import UserManagement
-from xoadmin.cli.utils import get_authenticated_api
+from xoadmin.cli.options import output_format
+from xoadmin.cli.utils import get_authenticated_api, render
 
 
 @click.group(name="user")
@@ -12,17 +13,22 @@ def user_commands():
     pass
 
 
+@user_commands.command(name="list")
+@output_format
 @click.option(
     "-c", "--config-path", default=None, help="Use a specific configuration file."
 )
-@user_commands.command(name="list")
-async def list_users(config_path: Optional[str] = None):
-    """List all users."""
+async def list_users(format_: str, config_path: Optional[str] = None):
+    """List all users with an option for raw information."""
     api = await get_authenticated_api(config_path)
     user_management = UserManagement(api)
-    users = await user_management.list_users()
-    for user in users:
-        click.echo(f"User: {user['email']}")
+    user_paths = await user_management.list_users()
+
+    users = []
+    for path in user_paths:
+        user_details = await user_management.get_user_details(path)
+        users.append(user_details)
+    click.echo(render(users, format_))
 
 
 @user_commands.command(name="create")

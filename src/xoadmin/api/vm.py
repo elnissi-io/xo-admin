@@ -11,7 +11,8 @@ class VMManagement:
 
     async def list_vms(self) -> List[Dict[str, Any]]:
         """List all VMs."""
-        return await self.api.get("rest/v0/vms")
+        vms = await self.api.get("rest/v0/vms?fields=id,name_label")
+        return vms
 
     async def start_vm(self, vm_id: str) -> Dict[str, Any]:
         """Start a specified VM."""

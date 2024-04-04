@@ -1,7 +1,8 @@
 import click
 
 from xoadmin.api.vm import VMManagement
-from xoadmin.cli.utils import coro, get_authenticated_api
+from xoadmin.cli.options import output_format
+from xoadmin.cli.utils import get_authenticated_api, render
 
 
 @click.group(name="vm")
@@ -11,13 +12,15 @@ def vm_commands():
 
 
 @vm_commands.command(name="list")
-async def list_vms():
+@output_format
+async def list_vms(format_: str):
     """List all VMs."""
     api = await get_authenticated_api()
     vm_management = VMManagement(api)
     vms = await vm_management.list_vms()
+
     for vm in vms:
-        click.echo(f"VM ID: {vm['id']}, Name: {vm['name_label']}")
+        click.echo(render(vm, format_))
 
 
 @vm_commands.command(name="start")

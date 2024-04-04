@@ -89,7 +89,7 @@ class XOAManager:
     def set_verify_ssl(self, enabled: bool) -> None:
         self.api.set_verify_ssl(enabled)
         self.verify_ssl = self.api.ws.verify_ssl
-        logger.info(
+        logger.debug(
             f"SSL verification {'enabled' if self.api.ws.verify_ssl else 'disabled'}."
         )
 
@@ -105,7 +105,7 @@ class XOAManager:
         self.vm_management = VMManagement(self.api)
         self.storage_management = StorageManagement(self.api)
         self.host_management = HostManagement(self.api)
-        logger.info("Authenticated and ready to manage Xen Orchestra.")
+        logger.debug("Authenticated and ready to manage Xen Orchestra.")
 
     async def create_user(
         self, email: str, password: str, permission: str = "none"
