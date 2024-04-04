@@ -1,36 +1,39 @@
 from typing import Optional
 
 from xoadmin.api.manager import XOAManager
-from xoadmin.configurator.config import AppConfig
+from xoadmin.configurator.config import ApplyConfig
 from xoadmin.configurator.loader import load_config
 
 
 class XOAConfigurator:
-    def __init__(self, config_path: str):
-        self.config_path = config_path
-        self.app_config: Optional[AppConfig] = None
+    def __init__(
+        self, apply_config: ApplyConfig = None, xoa_manager: XOAManager = None
+    ):
+        self.apply_config: ApplyConfig = apply_config
+        self.xoa_manager: Optional[XOAManager] = xoa_manager
 
-    async def load_and_apply_configuration(self):
-        self.app_config = load_config(self.config_path)
+    def load(self, config_path: str):
+        self.apply_config = load_config(config_path)
 
-        # Initialize XOAManager with XOA instance details
-        xoa_manager = XOAManager(
-            self.app_config.xoa.host,
-            self.app_config.xoa.rest_api,
-            self.app_config.xoa.websocket,
-            verify_ssl=False,
-        )
-        await xoa_manager.authenticate(
-            username=self.app_config.xoa.username, password=self.app_config.xoa.password
-        )
+    async def apply(
+        self, apply_config: ApplyConfig = None, xoa_manager: XOAManager = None
+    ):
+        if not xoa_manager:
+            xoa_manager = self.xoa_manager
+        if not xoa_manager:
+            raise ValueError("No XOAPI instance provided.")
+        if not apply_config:
+            apply_config = self.apply_config
+        if not apply_config:
+            raise ValueError("No ApplyConfig provided.")
         # Create users
-        for user in self.app_config.users:
+        for user in self.apply_config.users:
             await xoa_manager.create_user(
                 email=user.username, password=user.password, permission=user.permission
             )
 
         # Add hypervisors
-        for hypervisor in self.app_config.hypervisors:
+        for hypervisor in self.apply_config.hypervisors:
             await xoa_manager.add_host(
                 host=hypervisor.host,
                 username=hypervisor.username,

@@ -13,12 +13,12 @@ class HypervisorConfig(BaseModel):
     allowUnauthorized: Optional[bool] = False
 
 
-class XOAInstance(BaseModel):
-    host: str
-    rest_api: Optional[str] = None
-    websocket: Optional[str] = None
-    username: str
-    password: str
+# class XOAInstance(BaseModel):
+#     host: str
+#     rest_api: Optional[str] = None
+#     websocket: Optional[str] = None
+#     username: str
+#     password: str
 
 
 class UserConfig(BaseModel):
@@ -27,7 +27,7 @@ class UserConfig(BaseModel):
     permission: Optional[str] = "none"
 
 
-class AppConfig(BaseModel):
-    xoa: XOAInstance
+class ApplyConfig(BaseModel):
+    # xoa: XOAInstance
     hypervisors: List[HypervisorConfig]
     users: List[UserConfig]

@@ -137,18 +137,11 @@ The XO Admin Library provides a Command Line Interface (CLI) to simplify interac
     ```
 ## Applying a Configuration
 
-xoadmin allows you to quickly add hosts and users to an XOA instance (completely separate from the ~/.xoadmin/config host) using a YAML file. Here's how to do it:
+xoadmin allows you to quickly add hosts and users to an XOA instance using a YAML file:
 
 1. Create a YAML file with your desired configuration settings. For example:
 
     ```
-    xoa:
-      host: localhost
-      websocket: ws://localhost
-      rest_api: http://localhost:80
-      username: admin@admin.net
-      password: admin
-
     hypervisors:
       - host: 192.168.0.1
         username: root

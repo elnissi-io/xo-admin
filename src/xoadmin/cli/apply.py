@@ -1,5 +1,6 @@
 import click
 
+from xoadmin.cli.utils import get_authenticated_manager
 from xoadmin.configurator.configurator import XOAConfigurator
 
 
@@ -11,8 +12,13 @@ from xoadmin.configurator.configurator import XOAConfigurator
     required=True,
     help="Path to the configuration file.",
 )
-async def apply_config(file):
+@click.option(
+    "-c", "--config-path", default=None, help="Use a specific configuration file."
+)
+async def apply_config(file, config_path):
     """Apply configuration to Xen Orchestra instances."""
-    configurator = XOAConfigurator(file)
-    await configurator.load_and_apply_configuration()
+    xoa_manager = await get_authenticated_manager(config_path=config_path)
+    configurator = XOAConfigurator(xoa_manager=xoa_manager)
+    configurator.load(file)
+    await configurator.apply()
     click.echo("Configuration applied successfully.")
